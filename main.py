@@ -1,75 +1,74 @@
 import pygame
-import math
-import random
-from Vaisseau import Vaisseau, SCREEN_HEIGHT, SCREEN_WIDTH
-from Missil import Missil
-from Bot import Bot
+from game import Game
+from score import Score
+
+ 
 pygame.init()
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+#générer la fenètre du jeu
+screen = pygame.display.set_mode((1080,720))
+icon = pygame.image.load("assets/icon.jpg")
+pygame.display.set_caption("Pycarus")
+pygame.display.set_icon(icon)
+
+game = Game(screen)
+
+running = True
+while running :
+    pygame.time.Clock().tick(60)
+
+    # Affichage des images
+    game.scroll.scroll()
+    screen.blit(game.player.image, game.player.rect)
+    game.player.all_projectiles.draw(screen)
+    game.all_ennemie.draw(screen)
+    game.afficherScore(screen)
+
+        # Charger les sprites par groupe
+    for projectile in game.player.all_projectiles:
+        projectile.move()
+
+    game.player.bar_de_vie(screen)
+
+    for ennemie in game.all_ennemie:
+        ennemie.move()
+        ennemie.bar_de_vie(screen)
+        ennemie.update_animation()
+
+    # Gestion des mouvements
+    if (game.pressed.get(pygame.K_z) or game.pressed.get(pygame.K_UP)) and game.player.rect.y > 0:
+        game.player.move_up()
+    if (game.pressed.get(pygame.K_s) or game.pressed.get(pygame.K_DOWN)) and game.player.rect.y < 680:
+        game.player.move_down()
+    if (game.pressed.get(pygame.K_q) or game.pressed.get(pygame.K_LEFT)) and game.player.rect.x > 0: 
+        game.player.move_left()
+    if (game.pressed.get(pygame.K_d) or game.pressed.get(pygame.K_RIGHT)) and game.player.rect.x < 980:
+        game.player.move_right()
 
 
-pygame.display.set_caption("Endless Scroll")
-
-#charger l'image
-bg = pygame.image.load("bg.png").convert()
-player = pygame.image.load("player_plane.png").convert()
-bot = pygame.image.load("player_plane_bot.png").convert()
-
-#Définitions de variables utile
-clock = pygame.time.Clock()
-FPS = 60
-bg_width = bg.get_width()
-scroll = 0
-tiles = math.ceil(SCREEN_WIDTH / bg_width) + 1
-dt = 0
-player_pos = pygame.Vector2(SCREEN_WIDTH / 2, screen.get_height() / 2)
-
-
-
-
-liste_bot = []
-i=0
-while i < random.randint(1,20):
-    bot_pos = pygame.Vector2(SCREEN_WIDTH, random.randint(0,SCREEN_HEIGHT-25))
-    liste_bot.append(bot_pos)
-    i+=1
-
-
-
-#Boucle du jeu
-run = True
-
-
-
-
+    #MAJ de l'écran
+    pygame.display.flip()
     
-while run:
 
-    clock.tick(FPS)
-    #affiche l'image à la fin de la dernière
-    for i in range(0 , tiles):
-        screen.blit(bg, (i * bg_width + scroll,0))
-
-    scroll -= 5 
-
-    if abs(scroll) > bg_width:
-        scroll = 0
-    
-    object = Vaisseau()
-    object.v_deplacement(player_pos, player, dt, screen)
-    d={}
-    i=0
-    for i in liste_bot:
-        d["object_bot{0}".format(i)] = Bot()
-        d["object_bot{0}".format(i)].b_deplacement(i, bot, dt, screen)
-    
-    dt = clock.tick(60) / 1000
-
+    # Shutdown la fenêtre
     for event in pygame.event.get():
-        if  event.type == pygame.QUIT:
-            run = False
+        if event.type == pygame.QUIT:
+            running = False
+            with open('score.txt', 'a') as f:
+                f.write(f"Score : {str(game.score.score)}\n")
+            pygame.quit()
 
-    pygame.display.update()
+    #Detecter si des touche sdu clavier sont appuyer
+        elif event.type == pygame.KEYDOWN:
+            game.pressed[event.key] = True
 
-pygame.quit()
+            if event.key == pygame.K_SPACE:
+                game.player.launch_projectile()
+    #Detecter si des touche sdu clavier sont relacher
+        elif event.type == pygame.KEYUP:
+            game.pressed[event.key] = False   
+
+
+
+    
+      
